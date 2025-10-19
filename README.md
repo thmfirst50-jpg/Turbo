@@ -1,135 +1,30 @@
-# Flask Web Server Template
+# Turbo
 
-A complete Flask web application template with user authentication, SQLite3 database integration, and Bootstrap styling.
+## Inspiration
+We were inspired by the idea of using modern APIs to create a new and fun way of learning — one that’s accessible to anyone with an internet connection and a modern device. We wanted to make studying more interactive, conversational, and human-like.
 
-## Features
+## What it does
+Turbo is a web app that acts as your personal AI tutor. It takes a file as input, parses it through MathPix to extract LaTeX, sends it to Gemini for intelligent processing, and then uses ElevenLabs to read the AI’s response aloud. When users get stuck, they can click a Hint button to receive real-time help — as if a tutor were sitting beside them 24/7.
 
-- **User Authentication**: Registration, login, logout functionality
-- **Password Security**: Werkzeug password hashing
-- **SQLite3 Database**: Lightweight database for user storage
-- **Session Management**: Secure user sessions
-- **Protected Routes**: Login required decorator
-- **Bootstrap UI**: Clean and responsive design
-- **Flash Messages**: User feedback system
+## How we built it
+We built Turbo using Flask for backend routing and API management, and HTML, CSS, and JavaScript for the frontend. Our system integrates multiple APIs — MathPix, Gemini, and ElevenLabs — to parse input, generate meaningful responses, and deliver them with natural-sounding speech.
 
-## Project Structure
+## Challenges we ran into
+We faced several challenges, including setting up and authenticating multiple APIs, managing event-driven calls from JavaScript, and maintaining clean routing between the frontend and backend. Integrating three different services seamlessly was tricky, especially when handling asynchronous responses and formatting data properly for each API.
 
-```
-flask-webserver-template/
-├── app.py                 # Main Flask application
-├── requirements.txt       # Python dependencies
-├── README.md             # This file
-├── database.db           # SQLite database (created automatically)
-└── templates/
-    ├── base.html         # Base template
-    ├── index.html        # Home page
-    ├── login.html        # Login page
-    ├── register.html     # Registration page
-    └── dashboard.html    # User dashboard
-```
+## Accomplishments that we're proud of
+We’re proud of creating a fully functional, interactive learning tool that ties together multiple advanced APIs into a cohesive experience. The UI is clean, intuitive, and demonstrates how AI can enhance learning in a practical and accessible way.
 
-## Installation
+## What we learned
+We learned how powerful modern APIs can be when integrated thoughtfully. Working with Flask, JavaScript, and third-party AI services showed us how to combine technologies to create applications that are both effective and enjoyable to use.
 
-1. **Clone or download this template**
+## What's next for Turbo
+Next, we plan to expand Turbo’s capabilities by adding real-time voice conversation, multi-language support, and better visual recognition for handwritten notes. We also plan to attend more hackathons to continue learning, challenging ourselves, and exploring new technologies and methodologies.
 
-2. **Create a virtual environment** (recommended):
-   ```bash
-   python -m venv venv
-   
-   # On Windows:
-   venv\Scripts\activate
-   
-   # On macOS/Linux:
-   source venv/bin/activate
-   ```
-
-3. **Install dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Run the application**:
-   ```bash
-   python app.py
-   ```
-
-5. **Open your browser** and navigate to `http://localhost:5000`
-
-## Usage
-
-### First Time Setup
-
-1. Start the application
-2. The SQLite database (`database.db`) will be created automatically
-3. Navigate to the registration page to create your first user account
-4. Login with your credentials to access the dashboard
-
-### Routes
-
-- `/` - Home page
-- `/login` - User login
-- `/register` - User registration
-- `/dashboard` - Protected user dashboard (login required)
-- `/logout` - User logout
-
-### Customization
-
-#### Database Schema
-
-The user table includes:
-- `id` - Primary key
-- `username` - Unique username
-- `email` - Unique email address
-- `password_hash` - Hashed password
-- `created_at` - Timestamp
-
-To modify the schema, update the `init_db()` function in `app.py`.
-
-#### Adding New Routes
-
-Add new routes in `app.py`:
-
-```python
-@app.route('/new-page')
-@login_required  # Optional: require login
-def new_page():
-    return render_template('new_page.html')
-```
-
-#### Styling
-
-The template uses Bootstrap 5. Customize styles by:
-- Modifying the `<style>` section in `base.html`
-- Adding custom CSS files
-- Updating Bootstrap classes in templates
-
-#### Security
-
-**Important**: Before deploying to production:
-
-1. Change the secret key in `app.py`:
-   ```python
-   app.secret_key = 'your-secure-random-secret-key'
-   ```
-
-2. Set `debug=False` when running the app
-3. Use environment variables for sensitive configuration
-4. Consider using a more robust database like PostgreSQL
-
-## Dependencies
-
-- **Flask**: Web framework
-- **Werkzeug**: Password hashing and security utilities
-
-## Development
-
-To extend this template:
-
-1. Add new routes in `app.py`
-2. Create corresponding HTML templates in the `templates/` folder
-3. Update the navigation in `base.html` if needed
-4. Modify the database schema as required
-
-## License
-
-This template is free to use and modify for your projects.
+## Built With
+bootstrap
+elevenlabs
+flask
+gemini
+mathpix
+python
