@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Canvas{% endblock %}
+
+{% block content %}
+
+<!-- <div id="questionsList">
+    <ul id="uploadedQuestionsList"></ul>
+</div> -->
+
+<div id="canvasContainer">
+  <canvas id="fullCanvas"></canvas>
+</div>
+
+<div class="button-container">
+    <button id="recognizeBtn" class="svg-icon-button">
+        <img src="{{ url_for('static', filename='logos/gemini-color.svg') }}" alt="Gemini Logo">
+    </button>
+    <button id="uploadBtn" class="svg-icon-button">
+        <img src="{{ url_for('static', filename='logos/arrow_up.svg') }}" alt="uploadBtn">
+    </button> 
+    <input type="file" id="fileInput" accept="image/*, .pdf" style="display:none;">
+        <button id="hintBtn" class="svg-icon-button">
+        <img src="{{ url_for('static', filename='logos/hint.svg') }}" alt="hintBtn">
+    </button>
+    <button id="speakerBtn" class="svg-icon-button">
+        <img src="{{ url_for('static', filename='logos/speaker.svg') }}" alt="speakerBtn">
+    </button>
+    <button id="leftArrowBtn" class="svg-icon-button">
+        <img src="{{ url_for('static', filename='logos/arrow_left.svg') }}" alt="leftArrowBtn">
+    </button>
+    <button id="pageNumber" class="svg-icon-button">
+        <img src="{{ url_for('static', filename='logos/page_number.svg' )}}" alt="pageNumber">
+        <div id="page-counter">1</div>
+    </button>
+    <button id="RightArrowBtn" class="svg-icon-button">
+        <img src="{{ url_for('static', filename='logos/arrow_right.svg') }}" alt="rightArrow">
+    </button>
+</div>
+
+<!-- <div class="right-buttons">
+    <button id="uploadBtn" class="svg-icon-button">
+    <img src="{{ url_for('static', filename='logos/arrow_up.svg') }}" alt="error">
+    </button> 
+    <input type="file" id="fileInput" accept="image/*,application/pdf" style="display:none;">
+    <ul id="uploadedQuestionsList"></ul>
+    <button id="hintBtn" class="svg-icon-button">
+        <img src="{{ url_for('static', filename='logos/hint.svg') }}" alt="error">
+    </button>
+    <button id="speakerBtn" class="svg-icon-button">
+        <img src="{{ url_for('static', filename='logos/speaker.svg') }}" alt="error">
+    </button>
+</div> -->
+{% endblock %}
+
+{% block extra_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
+{% endblock %}
