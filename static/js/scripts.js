@@ -7,7 +7,11 @@ let canvases = {};        // { qNum: dataURL }
 let activeQuestion = null;
 let questionsDict = {};
 
-// Helper: draw background grid
+let currentColor = "#007bff";
+let currentTool = "draw";
+let currentLineWidth = 2;
+
+/* ------------------- Grid & Placeholder ------------------- */
 function drawGrid(lineWidth = 1, cellSize = 30, color = "#ded6d6ff") {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.strokeStyle = color;
@@ -26,7 +30,6 @@ function drawGrid(lineWidth = 1, cellSize = 30, color = "#ded6d6ff") {
     }
 }
 
-// Helper: draw centered placeholder text
 function drawPlaceholderText() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.font = "24px Arial";
@@ -36,39 +39,32 @@ function drawPlaceholderText() {
     ctx.fillText("Please upload a file", canvas.width / 2, canvas.height / 2);
 }
 
-// Async helper: draw a dataURL into canvas and wait until drawn
+/* ------------------- Helpers ------------------- */
 function drawDataUrlToCanvas(dataUrl) {
     return new Promise((resolve, reject) => {
         const img = new Image();
         img.onload = function () {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            // draw image scaled to canvas
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
             resolve();
         };
-        img.onerror = function (e) {
-            reject(e);
-        };
+        img.onerror = reject;
         img.src = dataUrl;
     });
 }
 
-// Resize canvas and re-render whatever should be visible
+/* ------------------- Resize Handling ------------------- */
 function resizeCanvas() {
-    const navbarHeight = document.querySelector('nav').offsetHeight;
-    // keep previous width/height so image scaling works after resize
+    const navbarHeight = document.querySelector('nav')?.offsetHeight || 0;
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight - navbarHeight;
-
-    // Render appropriate content after resizing
     renderCurrent();
 }
 window.addEventListener('resize', resizeCanvas);
-resizeCanvas(); // initial size
+resizeCanvas();
 
-// Render current active question or placeholder/grid
+/* ------------------- Render Question ------------------- */
 async function renderCurrent() {
-    // If no questions loaded yet -> placeholder
     if (!Object.keys(questionsDict).length || activeQuestion === null) {
         drawPlaceholderText();
         return;
@@ -76,7 +72,6 @@ async function renderCurrent() {
 
     document.getElementById('page-counter').textContent = activeQuestion;
 
-    // If activeQuestion has saved data, draw it (async)
     if (canvases[activeQuestion]) {
         try {
             await drawDataUrlToCanvas(canvases[activeQuestion]);
@@ -85,92 +80,173 @@ async function renderCurrent() {
             drawGrid();
         }
     } else {
-        // no saved drawing yet -> show grid (blank)
         drawGrid();
-        try {
-            canvases[activeQuestion] = canvas.toDataURL('image/png');
-        } catch (e) {
-            console.warn("Could not save blank state:", e);
-        }
+        canvases[activeQuestion] = canvas.toDataURL('image/png');
     }
 
-    
     const questionBox = document.getElementById("questionBox");
-
     const fixed = questionsDict[activeQuestion]
-    .replaceAll('\\\\(', '\\(')
-    .replaceAll('\\\\)', '\\)');
-
+        .replaceAll('\\\\(', '\\(')
+        .replaceAll('\\\\)', '\\)');
     questionBox.innerHTML = fixed;
 
-    if (window.MathJax) {
-      MathJax.typesetPromise([questionBox]);
-    }
-    
+    if (window.MathJax) MathJax.typesetPromise([questionBox]);
 }
 
-/* ---------------- Pointer / drawing events (unchanged behavior) ---------------- */
+/* ------------------- Drawing Controls ------------------- */
+const colorPicker = document.getElementById("colorPicker");
+const eraseMenu = document.getElementById("eraseMenu");
+
+colorPicker.addEventListener("input", (e) => {
+  currentColor = e.target.value;
+  ctx.strokeStyle = currentColor;
+});
+
+eraseMenu.addEventListener("change", (e) => {
+  currentTool = e.target.value;
+
+  if (currentTool === "clear") {
+    drawGrid();
+    canvases[activeQuestion] = canvas.toDataURL('image/png');
+    eraseMenu.value = "draw";
+    currentTool = "draw";
+  }
+});
+
+/* ------------------- Drawing Logic (Optimized for Stylus + Touch) ------------------- */
+let lastPos = { x: 0, y: 0 };
 
 function getPos(e) {
     const rect = canvas.getBoundingClientRect();
     if (e.touches) {
-        return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
+        const t = e.touches[0];
+        return { x: t.clientX - rect.left, y: t.clientY - rect.top, pressure: t.force || 1 };
     } else {
-        return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+        return { x: e.clientX - rect.left, y: e.clientY - rect.top, pressure: e.pressure || 1 };
     }
 }
 
-function startDraw(e) {
-    drawing = true;
-    ctx.beginPath();
-    const pos = getPos(e);
-    ctx.moveTo(pos.x, pos.y);
-}
+/* ---------------- Improved drawing input with palm rejection ---------------- */
 
-function draw(e) {
-    if (!drawing) return;
-    const pos = getPos(e);
-    ctx.lineTo(pos.x, pos.y);
-    ctx.strokeStyle = "#007bff";
-    ctx.lineWidth = 2;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.stroke();
-}
+let stylusActive = false;
 
-function stopDraw() {
-    if (!drawing) return;
-    drawing = false;
-    // autosave the current canvas to dataURL for the active question
-    if (activeQuestion !== null) {
-        try {
+document.addEventListener('selectstart', (e) => e.preventDefault());
+document.addEventListener('touchstart', (e) => {
+  if (e.target === canvas) e.preventDefault();
+}, { passive: false });
+
+// Detect input type and handle palm rejection
+canvas.addEventListener('pointerdown', (e) => {
+    // Only start drawing if using stylus or mouse
+    if (e.pointerType === 'pen' || e.pointerType === 'mouse') {
+        stylusActive = (e.pointerType === 'pen');
+        drawing = true;
+        ctx.beginPath();
+        const rect = canvas.getBoundingClientRect();
+        ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+        e.preventDefault();
+    }
+});
+
+canvas.addEventListener('pointermove', (e) => {
+    // Ignore finger touches if stylus is active (palm rejection)
+    if (stylusActive && e.pointerType === 'touch') return;
+
+    if (drawing) {
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        if (currentTool === "erase") {
+            ctx.globalCompositeOperation = "destination-out";
+            ctx.lineWidth = 20;
+        } else {
+            ctx.globalCompositeOperation = "source-over";
+            ctx.strokeStyle = currentColor;
+            ctx.lineWidth = 2;
+        }
+
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        ctx.lineTo(x, y);
+        ctx.stroke();
+        e.preventDefault();
+    }
+});
+
+canvas.addEventListener('pointerup', (e) => {
+    if (drawing) {
+        drawing = false;
+        stylusActive = false;
+        ctx.closePath();
+        // save canvas state
+        if (activeQuestion !== null) {
             canvases[activeQuestion] = canvas.toDataURL('image/png');
-        } catch (e) {
-            console.warn("Could not autosave canvas:", e);
         }
     }
-}
+});
 
-canvas.addEventListener('mousedown', startDraw);
-canvas.addEventListener('mousemove', draw);
-canvas.addEventListener('mouseup', stopDraw);
-canvas.addEventListener('mouseout', stopDraw);
+canvas.addEventListener('pointercancel', () => {
+    drawing = false;
+    stylusActive = false;
+});
 
-canvas.addEventListener('touchstart', startDraw, { passive: true });
-canvas.addEventListener('touchmove', draw, { passive: true });
-canvas.addEventListener('touchend', stopDraw);
-canvas.addEventListener('touchcancel', stopDraw);
 
-/* ---------------- End drawing events ---------------- */
+// function startDraw(e) {
+//     drawing = true;
+//     const pos = getPos(e);
+//     lastPos = pos;
+//     ctx.beginPath();
+//     ctx.moveTo(pos.x, pos.y);
+// }
 
-/* initial UI state */
+// function draw(e) {
+//     if (!drawing) return;
+//     const pos = getPos(e);
+
+//     ctx.lineCap = "round";
+//     ctx.lineJoin = "round";
+//     ctx.strokeStyle = currentColor;
+//     ctx.lineWidth = currentLineWidth * (pos.pressure || 1);
+
+//     if (currentTool === "erase") {
+//         ctx.globalCompositeOperation = "destination-out";
+//         ctx.lineWidth = 20;
+//     } else {
+//         ctx.globalCompositeOperation = "source-over";
+//     }
+
+//     // Smoother interpolation
+//     ctx.beginPath();
+//     ctx.moveTo(lastPos.x, lastPos.y);
+//     ctx.lineTo(pos.x, pos.y);
+//     ctx.stroke();
+
+//     lastPos = pos;
+// }
+
+// function stopDraw() {
+//     if (!drawing) return;
+//     drawing = false;
+//     ctx.closePath();
+//     if (activeQuestion !== null) {
+//         canvases[activeQuestion] = canvas.toDataURL('image/png');
+//     }
+// }
+
+// /* Desktop + Touch Events */
+// canvas.addEventListener('pointerdown', startDraw);
+// canvas.addEventListener('pointermove', draw);
+// canvas.addEventListener('pointerup', stopDraw);
+// canvas.addEventListener('pointercancel', stopDraw);
+
+/* ------------------- Initial UI ------------------- */
 if (!Object.keys(questionsDict).length) {
     drawGrid();
     drawPlaceholderText();
 }
 
-/* ---------------- backend + UI controls ---------------- */
-
+/* ------------------- Backend Communication ------------------- */
 async function sendCanvasToMathpix() {
     const dataURL = canvas.toDataURL('image/png');
     const response = await fetch('/recognize', {
@@ -181,7 +257,6 @@ async function sendCanvasToMathpix() {
     const result = await response.json();
     console.log("Mathpix Result:", result);
 }
-
 document.getElementById('recognizeBtn').addEventListener('click', sendCanvasToMathpix);
 
 const uploadBtn = document.getElementById('uploadBtn');
@@ -189,30 +264,23 @@ const fileInput = document.getElementById('fileInput');
 const speakerBtn = document.getElementById('speakerBtn');
 const hintBtn = document.getElementById('hintBtn');
 
-
 async function getHint() {
-
-  if (activeQuestion == null) {
-    console.log("No Active Question");
-    return;
-  }
+  if (activeQuestion == null) return;
 
   const question = questionsDict[activeQuestion];
-  const canvasData = canvas.toDataURL('image/png'); // convert canvas data to png image
+  const canvasData = canvas.toDataURL('image/png');
 
   const startTime = performance.now();
   const response = await fetch('/hint', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ question: question, image: canvasData })
+      body: JSON.stringify({ question, image: canvasData })
   });
   const endTime = performance.now();
 
-  console.log(`Call HINT took ${endTime - startTime} milliseconds`)
+  console.log(`Call HINT took ${endTime - startTime} milliseconds`);
 
   const data = await response.json();
-  console.log("TEXT FEEDBACK: ", data.textFeedback);
-
   const audioBytes = Uint8Array.from(atob(data.audioFeedback), c => c.charCodeAt(0));
   const blob = new Blob([audioBytes], { type: "audio/mpeg" });
   const audioUrl = URL.createObjectURL(blob);
@@ -220,22 +288,9 @@ async function getHint() {
   const audio = new Audio(audioUrl);
   audio.play();
 }
-
 hintBtn.addEventListener('click', getHint);
 
 uploadBtn.addEventListener('click', () => fileInput.click());
-
-speakerBtn.addEventListener('click', async () => {
-    try {
-        const response = await fetch('/speak');
-        const audioData = await response.blob();
-        const audioUrl = URL.createObjectURL(audioData);
-        const audio = new Audio(audioUrl);
-        audio.play();
-    } catch (error) {
-        console.error("Error generating speech:", error);
-    }
-});
 
 fileInput.addEventListener('change', async (event) => {
     const file = event.target.files[0];
@@ -243,95 +298,58 @@ fileInput.addEventListener('change', async (event) => {
 
     const formData = new FormData();
     formData.append('file', file);
+    document.getElementById('loadingOverlay').style.display = 'flex';
 
     try {
         const response = await fetch('/upload_doc', { method: 'POST', body: formData });
         const result = await response.json();
-        console.log("Server response:", result);
 
-        // reset state
         questionsDict = {};
         canvases = {};
         activeQuestion = null;
 
-        if (result.questions && Array.isArray(result.questions) && result.questions.length) {
-            // fill questionsDict with numeric keys starting at 1
-            result.questions.forEach((q, index) => {
-                const qNum = index + 1;
-                questionsDict[qNum] = q;
-            });
-            // set first question active and render it
+        if (result.questions?.length) {
+            result.questions.forEach((q, index) => questionsDict[index + 1] = q);
             activeQuestion = 1;
             await renderCurrent();
-        } else if (result.error) {
-            console.log(result.error);
-            drawPlaceholderText();
         } else {
-            console.log("Unexpected upload response:", result);
             drawPlaceholderText();
         }
     } catch (error) {
         console.error("Upload failed:", error);
         alert("Error reading document.");
         drawPlaceholderText();
+    } finally {
+        document.getElementById('loadingOverlay').style.display = 'none';
     }
 });
 
-/* ---------------- navigation ---------------- */
-
+/* ------------------- Navigation ------------------- */
 function getQuestionCount() {
     return Object.keys(questionsDict).length;
 }
 
-function updatePageCounter() {
-    const counterDiv = document.getElementById('page-counter');
-
-    if (activeQuestion !== null) {
-        counterDiv.textContent = activeQuestion;
-    } else {
-        counterDiv.textContent = 0; // or blank, if you prefer
-    }
-}
-
 async function loadQuestion(qNum) {
-    // save current active before switching
     if (activeQuestion !== null && activeQuestion !== qNum) {
-        try {
-            canvases[activeQuestion] = canvas.toDataURL('image/png');
-        } catch (e) {
-            console.warn("Could not auto-save current canvas:", e);
-        }
+        canvases[activeQuestion] = canvas.toDataURL('image/png');
     }
-
-    // set new active
     activeQuestion = qNum;
-
-    console.log(document.getElementById('page-counter').textContent);
-
-    // render the newly active question
     await renderCurrent();
 }
 
 document.getElementById('RightArrowBtn').addEventListener('click', async () => {
     const count = getQuestionCount();
-    if (count === 0) return;
-    if (activeQuestion === null) {
-        activeQuestion = 1;
-    } else if (activeQuestion < count) {
+    if (!count) return;
+    if (activeQuestion < count) {
         activeQuestion += 1;
+        await renderCurrent();
     }
-    await renderCurrent();
-    console.log("ACTIVE:", activeQuestion);
 });
-
 document.getElementById('leftArrowBtn').addEventListener('click', async () => {
     const count = getQuestionCount();
-    if (count === 0) return;
-    if (activeQuestion === null) {
-        activeQuestion = 1;
-    } else if (activeQuestion > 1) {
+    if (!count) return;
+    if (activeQuestion > 1) {
         activeQuestion -= 1;
+        await renderCurrent();
     }
-    await renderCurrent();
-    console.log("ACTIVE:", activeQuestion);
 });

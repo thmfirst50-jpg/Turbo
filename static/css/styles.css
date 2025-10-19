@@ -72,6 +72,14 @@ html, body {
     height: calc(100% - 0px);
     touch-action: none;
     cursor: crosshair;
+    touch-action: none; /* critical for stylus and touch drawing */
+    -ms-touch-action: none;
+    touch-action: none;          /* Prevents scrolling or zooming during touch */
+  user-select: none;           /* Prevents text selection */
+  -webkit-user-select: none;   /* Safari fix */
+  -webkit-touch-callout: none; /* Prevents long-press menu on iOS */
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 
 #questionBox {
@@ -88,4 +96,53 @@ html, body {
   word-wrap: break-word;
   white-space: normal;
   font-family: "Segoe UI", Tahoma, sans-serif;
+  -webkit-user-select: none; /* Safari */
+  -moz-user-select: none; /* Firefox */
+  -ms-user-select: none; /* Internet Explorer/Edge */
+  user-select: none; /* Standard syntax */
+}
+
+.tool-menu {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #f3f3f3;
+  border-radius: 10px;
+  padding: 8px;
+  display: flex;
+  gap: 10px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  z-index: 999;
+}
+
+.tool-menu input,
+.tool-menu select {
+  border: none;
+  padding: 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.spinner {
+  border: 6px solid #f3f3f3;
+  border-top: 6px solid #007bff;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+canvas {
+    touch-action: none;          /* Prevents scrolling or zooming during touch */
+  user-select: none;           /* Prevents text selection */
+  -webkit-user-select: none;   /* Safari fix */
+  -webkit-touch-callout: none; /* Prevents long-press menu on iOS */
+  -moz-user-select: none;
+  -ms-user-select: none;
 }

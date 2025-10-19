@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Canvas{% endblock %}
+{% block title %}Turbo{% endblock %}
 
 {% block content %}
 
@@ -9,6 +9,16 @@
 </div> -->
 
 <div id="questionBox"></div>
+
+<div class="tool-menu">
+  <input type="color" id="colorPicker" value="#007bff" title="Pick color">
+  
+  <select id="eraseMenu" title="Eraser Options">
+    <option value="draw">✏️ Draw</option>
+    <option value="erase">🩹 Erase</option>
+    <option value="clear">🗑️ Clear All</option>
+  </select>
+</div>
 
 <div id="canvasContainer">
   <canvas id="fullCanvas"></canvas>
