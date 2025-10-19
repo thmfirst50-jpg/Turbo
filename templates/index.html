@@ -4,9 +4,13 @@
 
 {% block content %}
 
-<!-- <div id="questionsList">
-    <ul id="uploadedQuestionsList"></ul>
-</div> -->
+<div id="hintFeedback" 
+     style="margin-top: 10px; 
+            font-size: 18px; 
+            font-weight: 500; 
+            color: #333; 
+            text-align: center;">
+</div>
 
 <div id="questionBox"></div>
 
@@ -26,7 +30,7 @@
 
 <div class="button-container">
     <button id="recognizeBtn" class="svg-icon-button">
-        <img src="{{ url_for('static', filename='logos/gemini-color.svg') }}" alt="Gemini Logo">
+        <img src="{{ url_for('static', filename='logos/turbo.svg') }}" alt="Gemini Logo">
     </button>
     <button id="uploadBtn" class="svg-icon-button">
         <img src="{{ url_for('static', filename='logos/arrow_up.svg') }}" alt="uploadBtn">
@@ -35,34 +39,20 @@
         <button id="hintBtn" class="svg-icon-button">
         <img src="{{ url_for('static', filename='logos/hint.svg') }}" alt="hintBtn">
     </button>
-    <button id="speakerBtn" class="svg-icon-button">
+    <!-- <button id="speakerBtn" class="svg-icon-button">
         <img src="{{ url_for('static', filename='logos/speaker.svg') }}" alt="speakerBtn">
-    </button>
+    </button> -->
     <button id="leftArrowBtn" class="svg-icon-button">
         <img src="{{ url_for('static', filename='logos/arrow_left.svg') }}" alt="leftArrowBtn">
     </button>
     <button id="pageNumber" class="svg-icon-button">
         <img src="{{ url_for('static', filename='logos/page_number.svg' )}}" alt="pageNumber">
-        <div id="page-counter">1</div>
+        <div id="page-counter" class="page-number">1</div>
     </button>
     <button id="RightArrowBtn" class="svg-icon-button">
         <img src="{{ url_for('static', filename='logos/arrow_right.svg') }}" alt="rightArrow">
     </button>
 </div>
-
-<!-- <div class="right-buttons">
-    <button id="uploadBtn" class="svg-icon-button">
-    <img src="{{ url_for('static', filename='logos/arrow_up.svg') }}" alt="error">
-    </button> 
-    <input type="file" id="fileInput" accept="image/*,application/pdf" style="display:none;">
-    <ul id="uploadedQuestionsList"></ul>
-    <button id="hintBtn" class="svg-icon-button">
-        <img src="{{ url_for('static', filename='logos/hint.svg') }}" alt="error">
-    </button>
-    <button id="speakerBtn" class="svg-icon-button">
-        <img src="{{ url_for('static', filename='logos/speaker.svg') }}" alt="error">
-    </button>
-</div> -->
 {% endblock %}
 
 {% block extra_styles %}

@@ -11,23 +11,8 @@ let currentColor = "#007bff";
 let currentTool = "draw";
 let currentLineWidth = 2;
 
-/* ------------------- Grid & Placeholder ------------------- */
-function drawGrid(lineWidth = 1, cellSize = 30, color = "#ded6d6ff") {
+function clearCanvas() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = color;
-    ctx.lineWidth = lineWidth;
-    for (let x = 0; x <= canvas.width; x += cellSize) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, canvas.height);
-        ctx.stroke();
-    }
-    for (let y = 0; y <= canvas.height; y += cellSize) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(canvas.width, y);
-        ctx.stroke();
-    }
 }
 
 function drawPlaceholderText() {
@@ -77,10 +62,10 @@ async function renderCurrent() {
             await drawDataUrlToCanvas(canvases[activeQuestion]);
         } catch (e) {
             console.error("Error drawing saved canvas:", e);
-            drawGrid();
+            clearCanvas();
         }
     } else {
-        drawGrid();
+        clearCanvas();
         canvases[activeQuestion] = canvas.toDataURL('image/png');
     }
 
@@ -106,7 +91,7 @@ eraseMenu.addEventListener("change", (e) => {
   currentTool = e.target.value;
 
   if (currentTool === "clear") {
-    drawGrid();
+    clearCanvas();
     canvases[activeQuestion] = canvas.toDataURL('image/png');
     eraseMenu.value = "draw";
     currentTool = "draw";
@@ -191,58 +176,9 @@ canvas.addEventListener('pointercancel', () => {
     stylusActive = false;
 });
 
-
-// function startDraw(e) {
-//     drawing = true;
-//     const pos = getPos(e);
-//     lastPos = pos;
-//     ctx.beginPath();
-//     ctx.moveTo(pos.x, pos.y);
-// }
-
-// function draw(e) {
-//     if (!drawing) return;
-//     const pos = getPos(e);
-
-//     ctx.lineCap = "round";
-//     ctx.lineJoin = "round";
-//     ctx.strokeStyle = currentColor;
-//     ctx.lineWidth = currentLineWidth * (pos.pressure || 1);
-
-//     if (currentTool === "erase") {
-//         ctx.globalCompositeOperation = "destination-out";
-//         ctx.lineWidth = 20;
-//     } else {
-//         ctx.globalCompositeOperation = "source-over";
-//     }
-
-//     // Smoother interpolation
-//     ctx.beginPath();
-//     ctx.moveTo(lastPos.x, lastPos.y);
-//     ctx.lineTo(pos.x, pos.y);
-//     ctx.stroke();
-
-//     lastPos = pos;
-// }
-
-// function stopDraw() {
-//     if (!drawing) return;
-//     drawing = false;
-//     ctx.closePath();
-//     if (activeQuestion !== null) {
-//         canvases[activeQuestion] = canvas.toDataURL('image/png');
-//     }
-// }
-
-// /* Desktop + Touch Events */
-// canvas.addEventListener('pointerdown', startDraw);
-// canvas.addEventListener('pointermove', draw);
-// canvas.addEventListener('pointerup', stopDraw);
-// canvas.addEventListener('pointercancel', stopDraw);
-
 /* ------------------- Initial UI ------------------- */
 if (!Object.keys(questionsDict).length) {
-    drawGrid();
+    clearCanvas();
     drawPlaceholderText();
 }
 
@@ -284,6 +220,9 @@ async function getHint() {
   const audioBytes = Uint8Array.from(atob(data.audioFeedback), c => c.charCodeAt(0));
   const blob = new Blob([audioBytes], { type: "audio/mpeg" });
   const audioUrl = URL.createObjectURL(blob);
+
+  const feedbackBox = document.getElementById('hintFeedback');
+  feedbackBox.textContent = data.textFeedback;
 
   const audio = new Audio(audioUrl);
   audio.play();

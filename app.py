@@ -3,17 +3,14 @@ import os
 import io
 from mpxpy.mathpix_client import MathpixClient
 import base64
-import re
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
-import json
 from elevenlabs.client import ElevenLabs
 from elevenlabs.play import play
 from dotenv import load_dotenv
 import time
 import random
-import httpx
 
 load_dotenv()
 
@@ -21,9 +18,6 @@ app = Flask(__name__)
 
 UPLOAD_FOLDER = os.path.join("static", "uploads")
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-#from blueprints.api import api_bp
-#app.register_blueprint(api_bp, url_prefix="/api")
 
 # Your Mathpix credentials from environment variables
 app_id = os.getenv("MATHPIX_APP_ID")
@@ -38,39 +32,39 @@ elevenlabs = ElevenLabs(api_key=labs_api_key)
 voiceIds = ["2EiwWnXFnvU5JabPnv8n", "IKne3meq5aSn9XLyUdCD", "2EiwWnXFnvU5JabPnv8n", "cgSgspJ2msm6clMCkdW9", "pFZP5JQG7iQjIQuC4Bku", "EXAVITQu4vr4xnSDxMaL"]
 selectedVoice = None
 
-
 @app.route('/')
 def index():
     return render_template('index.html')
 
-@app.route('/recognize', methods=['POST'])
-def recognize():
-    data = request.json
-    image_data = data.get('image')  # base64 string starting with "data:image/png;base64,..."
+#sends mathpix markdown to console
+# @app.route('/recognize', methods=['POST'])
+# def recognize():
+#     data = request.json
+#     image_data = data.get('image')  # base64 string starting with "data:image/png;base64,..."
 
-    # Strip the prefix if it exists
-    if image_data.startswith("data:image/png;base64,"):
-        image_data = image_data.split(",")[1]
+#     # Strip the prefix if it exists
+#     if image_data.startswith("data:image/png;base64,"):
+#         image_data = image_data.split(",")[1]
 
-    # Convert to bytes
-    image_bytes = base64.b64decode(image_data)
+#     # Convert to bytes
+#     image_bytes = base64.b64decode(image_data)
 
-    # Save the image bytes to a temporary file
-    with open("temp_image.png", "wb") as f:
-        f.write(image_bytes)
+#     # Save the image bytes to a temporary file
+#     with open("temp_image.png", "wb") as f:
+#         f.write(image_bytes)
 
-    # Process the image using Mathpix
-    image = client.image_new(file_path="temp_image.png", include_line_data=True)
+#     # Process the image using Mathpix
+#     image = client.image_new(file_path="temp_image.png", include_line_data=True)
 
-    # Get the Mathpix Markdown (MMD) representation
-    mmd = image.mmd()
-    print("MMD OUTPUT\n", mmd)
+#     # Get the Mathpix Markdown (MMD) representation
+#     mmd = image.mmd()
+#     print("MMD OUTPUT\n", mmd)
 
-    # Get line-by-line OCR data
-    lines = image.lines_json()
-    print("LINES OUTPUT\n", lines)
+#     # Get line-by-line OCR data
+#     lines = image.lines_json()
+#     print("LINES OUTPUT\n", lines)
 
-    return jsonify(lines)
+#     return jsonify(lines)
 
 @app.route("/upload_doc", methods=["POST"])
 def upload_doc():
@@ -99,7 +93,6 @@ def upload_doc():
     
     return uploadQuestions(mmd)
 
-
 def uploadQuestions(questions):
     response = geminiClient.models.generate_content(
         model="gemini-2.5-flash",
@@ -119,7 +112,6 @@ def uploadQuestions(questions):
     questionsList = response.parsed
     
     return jsonify({"questions": questionsList})
-
 
 def sendQuestionGemini(question, canvasLatex):
     response = geminiClient.models.generate_content(
@@ -179,8 +171,6 @@ def hint():
     print("Gemini Processing:", end_time_g - start_time_g, "seconds")
     print("Mathpix Processing:", end_time - start_time, "seconds")
 
-
-
     # If generator, combine all chunks
     if hasattr(audio_gen, '__iter__') and not isinstance(audio_gen, bytes):
         audio_bytes = b"".join(audio_gen)
@@ -195,15 +185,6 @@ def hint():
         "audioFeedback": audio_base64
     })
 
-# def textToSpeech():
-#     audio = elevenlabs.text_to_speech.convert(
-#     text="The first move is what sets everything in motion.",
-#     voice_id="JBFqnCBsd6RMkjVDRZzb",
-#     model_id="eleven_multilingual_v2",
-#     output_format="mp3_44100_128",
-# )
-#     play(audio)
-#     return
 
 @app.route('/speak', methods=['GET'])
 def speak(textFeedback):
@@ -232,9 +213,6 @@ def speak(textFeedback):
         print("Error generating speech:", e)
         return "Server Error", 500
 
-# app.route('/solution', methods=['POST'])
-# def solution():
 
 if __name__ == "__main__":
-    # app = create_app()
     app.run(host="0.0.0.0", port=80, debug=True)
