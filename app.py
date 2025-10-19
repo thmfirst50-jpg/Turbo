@@ -11,6 +11,9 @@ import json
 from elevenlabs.client import ElevenLabs
 from elevenlabs.play import play
 from dotenv import load_dotenv
+import time
+import random
+import httpx
 
 load_dotenv()
 
@@ -26,9 +29,15 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app_id = os.getenv("MATHPIX_APP_ID")
 app_key = os.getenv("MATHPIX_APP_KEY")
 gemini_key = os.getenv("GEMINI_API_KEY")
+labs_api_key=os.getenv("ELEVENLABS_API_KEY")
 
 geminiClient = genai.Client(api_key=gemini_key)
 client = MathpixClient(app_id=app_id, app_key=app_key)
+elevenlabs = ElevenLabs(api_key=labs_api_key)
+
+voiceIds = ["2EiwWnXFnvU5JabPnv8n", "IKne3meq5aSn9XLyUdCD", "2EiwWnXFnvU5JabPnv8n", "cgSgspJ2msm6clMCkdW9", "pFZP5JQG7iQjIQuC4Bku", "EXAVITQu4vr4xnSDxMaL"]
+selectedVoice = None
+
 
 @app.route('/')
 def index():
@@ -65,6 +74,7 @@ def recognize():
 
 @app.route("/upload_doc", methods=["POST"])
 def upload_doc():
+    global selectedVoice
     if "file" not in request.files:
         return jsonify({"error": "No file uploaded"}), 400
 
@@ -76,6 +86,8 @@ def upload_doc():
     
     save_path = os.path.join(UPLOAD_FOLDER, file.filename)
     file.save(save_path)
+
+    selectedVoice = random.choice(voiceIds)
 
     if file.filename.endswith(".pdf"):
         pdf = client.pdf_new(file_path=save_path)
@@ -96,7 +108,6 @@ def uploadQuestions(questions):
                     you will be given questions. Your task is to identify and seperate the questions.
                     The output should be in the following format:
                     QUESTION_1, QUESTION_2, ..., QUESTION_N.
-                 
                     Seperate each question with a comma
             """,
             response_mime_type="application/json",
@@ -115,11 +126,8 @@ def sendQuestionGemini(question, canvasLatex):
         model="gemini-2.5-flash",
         config=types.GenerateContentConfig(
             system_instruction="""
-                    You are a helpful tutor. You will be provided a 
-                    question, followed by the work that the student is currently
-                    doing to answer the question. Your role is to offer helpful guidance
-                    and help the student arrive to the solution. Do not directly answer
-                    the question.
+                    You are a helpful tutor. Help the student solve questions without giving answers.
+                    you will be on speaker. cheer student when he/she gets the correct answer.
             """,
             response_mime_type="application/json",
             response_schema= list[str],
@@ -144,21 +152,34 @@ def hint():
     image_bytes = base64.b64decode(image_data)
     with open("temp_image.png", "wb") as f:
         f.write(image_bytes)
+    
+    start_time = time.time()
     image = client.image_new(file_path="temp_image.png", include_line_data=True)
+    end_time = time.time()
     mmd = image.mmd()
 
     # send to gemini for processing
+    start_time_g = time.time()
     result = sendQuestionGemini(question_data, mmd)
+    end_time_g = time.time()
 
     ". ".join(result)
 
     textFeedback = str(result[0])
+    start_time_e = time.time()
     audio_gen = elevenlabs.text_to_speech.convert(
         text=textFeedback,
-        voice_id="JBFqnCBsd6RMkjVDRZzb",
-        model_id="eleven_multilingual_v2",
+        voice_id=selectedVoice,
+        model_id="eleven_turbo_v2",
         output_format="mp3_44100_128",
     )
+    end_time_e = time.time()
+
+    print("Elevenlabs Processing:", end_time_e - start_time_e, "seconds")
+    print("Gemini Processing:", end_time_g - start_time_g, "seconds")
+    print("Mathpix Processing:", end_time - start_time, "seconds")
+
+
 
     # If generator, combine all chunks
     if hasattr(audio_gen, '__iter__') and not isinstance(audio_gen, bytes):
@@ -173,11 +194,6 @@ def hint():
         "textFeedback": textFeedback,
         "audioFeedback": audio_base64
     })
-
-
-elevenlabs = ElevenLabs(
-    api_key=os.getenv("ELEVENLABS_API_KEY"),    
-)
 
 # def textToSpeech():
 #     audio = elevenlabs.text_to_speech.convert(
@@ -195,8 +211,8 @@ def speak(textFeedback):
         # Generate audio (might return a generator)
         audio_gen = elevenlabs.text_to_speech.convert(
             text=f"{textFeedback}",
-            voice_id="JBFqnCBsd6RMkjVDRZzb",
-            model_id="eleven_multilingual_v2",
+            voice_id="cgSgspJ2msm6clMCkdW9",
+            model_id="eleven_turbo_v2",
             output_format="mp3_44100_128",
         )
 

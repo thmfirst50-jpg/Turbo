@@ -5,11 +5,18 @@ html, body {
     overflow: hidden;
 }
 
+
 /*.button-container {
     display: flex;
     flex-direction: column;
     gap: 8px;   
 }*/
+
+
+/*.navbar-brand img{
+    height: 90px;
+} */  
+
 
 .button-container {
   display: flex;
@@ -59,11 +66,26 @@ html, body {
 
 #fullCanvas {
     position: absolute;
-    top: 56px; /* adjust if your navbar is taller */
-    left: 300px;
+    top: 0px; /* adjust if your navbar is taller */
+    left: 0px;
     width: 100%;
-    height: calc(100% - 56px);
+    height: calc(100% - 0px);
     touch-action: none;
     cursor: crosshair;
-    border: 3px solid black
+}
+
+#questionBox {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  width: 90%;
+  max-width: 900px;
+  margin: 15px auto;
+  padding: 15px 20px;
+  border-radius: 10px;
+  background-color: #fafafa;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  text-align: left;
+  word-wrap: break-word;
+  white-space: normal;
+  font-family: "Segoe UI", Tahoma, sans-serif;
 }

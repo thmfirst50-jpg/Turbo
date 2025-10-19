@@ -70,7 +70,6 @@ resizeCanvas(); // initial size
 async function renderCurrent() {
     // If no questions loaded yet -> placeholder
     if (!Object.keys(questionsDict).length || activeQuestion === null) {
-        // nothing uploaded -> show placeholder
         drawPlaceholderText();
         return;
     }
@@ -88,13 +87,26 @@ async function renderCurrent() {
     } else {
         // no saved drawing yet -> show grid (blank)
         drawGrid();
-        // save the blank state so restores show blank instead of placeholder
         try {
             canvases[activeQuestion] = canvas.toDataURL('image/png');
         } catch (e) {
             console.warn("Could not save blank state:", e);
         }
     }
+
+    
+    const questionBox = document.getElementById("questionBox");
+
+    const fixed = questionsDict[activeQuestion]
+    .replaceAll('\\\\(', '\\(')
+    .replaceAll('\\\\)', '\\)');
+
+    questionBox.innerHTML = fixed;
+
+    if (window.MathJax) {
+      MathJax.typesetPromise([questionBox]);
+    }
+    
 }
 
 /* ---------------- Pointer / drawing events (unchanged behavior) ---------------- */
@@ -188,11 +200,15 @@ async function getHint() {
   const question = questionsDict[activeQuestion];
   const canvasData = canvas.toDataURL('image/png'); // convert canvas data to png image
 
+  const startTime = performance.now();
   const response = await fetch('/hint', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({ question: question, image: canvasData })
   });
+  const endTime = performance.now();
+
+  console.log(`Call HINT took ${endTime - startTime} milliseconds`)
 
   const data = await response.json();
   console.log("TEXT FEEDBACK: ", data.textFeedback);
