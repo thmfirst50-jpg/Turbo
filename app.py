@@ -30,7 +30,7 @@ client = MathpixClient(app_id=app_id, app_key=app_key)
 elevenlabs = ElevenLabs(api_key=labs_api_key)
 
 voiceIds = ["2EiwWnXFnvU5JabPnv8n", "IKne3meq5aSn9XLyUdCD", "2EiwWnXFnvU5JabPnv8n", "cgSgspJ2msm6clMCkdW9", "pFZP5JQG7iQjIQuC4Bku", "EXAVITQu4vr4xnSDxMaL"]
-selectedVoice = None
+selectedVoice = "pFZP5JQG7iQjIQuC4Bku"
 
 @app.route('/')
 def index():
@@ -81,7 +81,7 @@ def upload_doc():
     save_path = os.path.join(UPLOAD_FOLDER, file.filename)
     file.save(save_path)
 
-    selectedVoice = random.choice(voiceIds)
+    # selectedVoice = random.choice(voiceIds)
 
     if file.filename.endswith(".pdf"):
         pdf = client.pdf_new(file_path=save_path)
@@ -118,8 +118,8 @@ def sendQuestionGemini(question, canvasLatex):
         model="gemini-2.5-flash",
         config=types.GenerateContentConfig(
             system_instruction="""
-                    You are a helpful tutor. Help the student solve questions without giving answers.
-                    you will be on speaker. cheer student when he/she gets the correct answer.
+                    You are a helpful tutor. Let the user know what they are doing wrong, and the next step should be.
+                    Keep responses brief.
             """,
             response_mime_type="application/json",
             response_schema= list[str],
@@ -192,7 +192,7 @@ def speak(textFeedback):
         # Generate audio (might return a generator)
         audio_gen = elevenlabs.text_to_speech.convert(
             text=f"{textFeedback}",
-            voice_id="cgSgspJ2msm6clMCkdW9",
+            voice_id=selectedVoice,
             model_id="eleven_turbo_v2",
             output_format="mp3_44100_128",
         )
