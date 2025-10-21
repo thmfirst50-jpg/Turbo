@@ -1,0 +1,6 @@
+.env
+static/uploads
+venv/
+temp_image.png
+__pycache__
+*.pyc
